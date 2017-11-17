@@ -4,7 +4,6 @@ import datetime
 import csv
 import codecs
 import time
-import sys
 
 import bs4 as bs
 import requests
@@ -145,7 +144,7 @@ def save_data_to_csv(data: list, fpath: str, overwrite: bool=False):
             csv_writer.writerow(d)
 
 
-def write_data_to_csv(data: list, dir_path: str, location: str):
+def save(data: list, dir_path: str, location: str):
     """
     Function to save the data. First to the current file and then to the data directory
 
@@ -213,7 +212,7 @@ def main_loop(location: str, time_frame: T.Union[int, float], dir_path: str, sin
             print('[INFO] Parse response')
             data = parse_response(response=response)
             print('[INFO]: Save Data')
-            write_data_to_csv(data, dir_path=dir_path, location=location)
+            save(data, dir_path=dir_path, location=location)
 
             if single_run:
                 return

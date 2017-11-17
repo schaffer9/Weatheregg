@@ -12,7 +12,7 @@ Go into the Weatheregg directory and run
 
 Now you should be able to run the Weatheregg program.
 
-Type **python36 weatheregg -h**
+Type **python weatheregg -h**
 
 
 ## usage:
