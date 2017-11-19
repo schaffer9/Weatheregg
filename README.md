@@ -3,36 +3,35 @@ A simple program to collect weather data
 
 ## Installation:
 
-Download and install Python3.6
-Make sure that you have added it to your environment variables and that you can run it
+1. Download and install Python3.6  
 
-Go into the Weatheregg directory and run
+    Make sure that you have added it to your environment variables and that you can run it
 
-**python setup.py install** or
+2. Go into the Weatheregg directory and run 
 
-**python36 setup.py install**
+    **python setup.py install** or  
+    **python36 setup.py install**
 
+3. Now you should be able to run the Weatheregg program.
 
-Now you should be able to run the Weatheregg program.
-
-Type **python weatheregg -h**
-
+    Type **python weatheregg -h**
 
 ## usage:
 `weatheregg [-h] [-i INTERVAL] [-s] location directory`
 
-| **positional arguments** |
-| ------------- |-------------|
+|**positional arguments**: | |
+| --- | --- |
 | location      | Which place? |
 | directory     | Where do you want to store your data? |
 
-| **optional arguments** |
-| ------------- |-------------|
-| -h, --help                       | show this help message and exit |
-| -i INTERVAL, --interval INTERVAL | In which intervals do you want to collect be given in minutes |
+
+| **optional arguments**:  | |
+| --- | --- |
+| -h, --help                       | show this help message and exit? |
+| -i, --interval INTERVAL | For repeatedly collecting data in **minutes**. Default is 60 |
 | -s, --single-run                 | Do you want to just load the data once? |
 
-Wheatheregg can be run in a loop to collect and update data in a given interval or it is possible to run it just once.
+Wheatheregg can be run in a loop to collect and update data in a given interval or it is possible to run it just once. If you just want to run it once add -s to the command. By default it will run in a loop with an interval of 60 minutes.
 
 ## Examples:
 
