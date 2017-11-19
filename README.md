@@ -19,33 +19,25 @@ Type **python weatheregg -h**
 
 
 ## usage:
-weatheregg [-h] [-i INTERVAL] [-s] location directory
+`weatheregg [-h] [-i INTERVAL] [-s] location directory`
 
-WeatherEgg-0.0.1
+| **positional arguments** |
+| ------------- |-------------|
+| location      | Which place? |
+| directory     | Where do you want to store your data? |
 
-positional arguments:
-
-  location              Which place?
-
-  directory             Where do you want to store your data?
-
-optional arguments:
-
-  -h, --help            show this help message and exit
-
-  -i INTERVAL, --interval INTERVAL
-
-                        In which intervals do you want to collect
-                        be given in minutes
-
-  -s, --single-run      Do you want to just load the data once?
+| **optional arguments** |
+| ------------- |-------------|
+| -h, --help                       | show this help message and exit |
+| -i INTERVAL, --interval INTERVAL | In which intervals do you want to collect be given in minutes |
+| -s, --single-run                 | Do you want to just load the data once? |
 
 Wheatheregg can be run in a loop to collect and update data in a given interval or it is possible to run it just once.
 
 ## Examples:
 
-python -m weatheregg wien data -i 60
+`python -m weatheregg wien data -i 60`
 
-python -m weatheregg Purkersdorf /home/user/data -s
+`python -m weatheregg Purkersdorf /home/user/data -s`
 
-python -m weatheregg Purkersdorf C:\Users\user\workspace\data -i 30
+`python -m weatheregg Purkersdorf C:\Users\user\workspace\data -i 30`
