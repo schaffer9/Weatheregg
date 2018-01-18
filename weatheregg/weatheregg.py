@@ -88,7 +88,7 @@ def parse_response(response: requests.Response) -> list:
         date = weather[0][0]
         ti = ti.strip().split(':')
         print(d[0])
-        weather[0] = ti[0].strip() + ':' + ti[1].strip()
+        weather[0] = ti[0].strip() + '-' + ti[1].strip()
 
         today = datetime.date.today()
         if date == 'heute':
