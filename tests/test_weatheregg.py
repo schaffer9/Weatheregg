@@ -3,7 +3,7 @@ from shutil import rmtree
 import pytest
 import unittest
 
-from weatheregg.weatheregg import *
+from weatheregg.weatheregg import main_loop, LocationError, make_request_for_location, parse_response
 
 
 TEST_DIR = path.abspath(path.dirname(__file__))

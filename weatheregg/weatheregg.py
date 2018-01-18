@@ -10,7 +10,7 @@ import requests
 
 
 FILE_NAME = '{location}_weather.csv'
-FILE_PATTERN = time.strftime("%d-%m-%Y_%H-%M.csv")
+FILE_PATTERN = "{0:%d-%m-%Y_%H}.csv"
 DATA_DIR_NAME = 'data'
 
 
@@ -86,8 +86,9 @@ def parse_response(response: requests.Response) -> list:
         # parse the date
         ti = weather[0][1]
         date = weather[0][0]
-        ti = ti.strip().split(' - ')
-        weather[0] = ti[0].strip() + '-' + ti[1].strip()
+        ti = ti.strip().split(':')
+        print(d[0])
+        weather[0] = ti[0].strip() + ':' + ti[1].strip()
 
         today = datetime.date.today()
         if date == 'heute':

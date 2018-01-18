@@ -28,7 +28,7 @@ A simple program to collect weather data
 | **optional arguments**:  | |
 | --- | --- |
 | -h, --help                       | show this help message and exit? |
-| -i, --interval INTERVAL | For repeatedly collecting data in **minutes**. Default is 60 |
+| -i, --interval INTERVAL | For repeatedly collecting data in **minutes**. Min.= 60, Default=60 |
 | -s, --single-run                 | Do you want to just load the data once? |
 
 Wheatheregg can be run in a loop to collect and update data in a given interval or it is possible to run it just once. If you just want to run it once add -s to the command. By default it will run in a loop with an interval of 60 minutes.
@@ -39,4 +39,4 @@ Wheatheregg can be run in a loop to collect and update data in a given interval 
 
 `python -m weatheregg Purkersdorf /home/user/data -s`
 
-`python -m weatheregg Purkersdorf C:\Users\user\workspace\data -i 30`
+`python -m weatheregg Purkersdorf C:\Users\user\workspace\data -i 60`

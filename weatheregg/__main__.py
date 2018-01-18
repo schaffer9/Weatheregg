@@ -28,6 +28,7 @@ def main(args=None):
 
     print(args)
 
+    assert args.interval >= 60, 'Interval must be greater than 60 minutes'
     main_loop(location=args.location,
               dir_path=args.directory,
               time_frame=args.interval,

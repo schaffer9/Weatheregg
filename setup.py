@@ -24,7 +24,7 @@ setup(
     license="MIT",
     packages=['weatheregg', 'tests'],
     long_description=read('README.md'),
-    install_requires=['bs4==4.6', 'requests==2.18', 'pytest==3.2', 'lxml==4.1'],
+    install_requires=['requests==2.18', 'pytest==3.2', 'lxml==4.1.0', 'beautifulsoup4==4.5.3'],
     entry_points={
               'console_scripts': [
                   'weatheregg = weatheregg.__main__:main'
