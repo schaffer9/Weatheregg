@@ -17,17 +17,21 @@ def read(fname):
 
 setup(
     name="Weatheregg",
-    version="0.0.1",
+    version="1.2.0",
     author="Sebastian Schaffer",
     author_email="schaffer.sebastian@gmx.at",
-    description="Small program to download some wheather data",
+    description="Small program to download some weather data",
     license="MIT",
     packages=['weatheregg', 'tests'],
     long_description=read('README.md'),
-    install_requires=['requests==2.18', 'pytest==3.2', 'lxml==4.1.0', 'beautifulsoup4==4.5.3'],
+    install_requires=['requests==2.19.1',
+                      'pytest==3.6.3',
+                      'lxml==4.2.3',
+                      'beautifulsoup4==4.6.0',
+                      'pytz==2018.5'],
     entry_points={
               'console_scripts': [
-                  'weatheregg = weatheregg.__main__:main'
+                  'weatheregg = weatheregg.__main__:get_weather'
               ]
     }
 )
