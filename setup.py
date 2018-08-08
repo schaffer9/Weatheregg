@@ -1,6 +1,8 @@
 import os
 from setuptools import setup
 
+from weatheregg.version import __version__
+
 
 def read(fname):
     """
@@ -17,7 +19,7 @@ def read(fname):
 
 setup(
     name="Weatheregg",
-    version="1.2.0",
+    version=__version__,
     author="Sebastian Schaffer",
     author_email="schaffer.sebastian@gmx.at",
     description="Small program to download some weather data",
@@ -31,7 +33,9 @@ setup(
                       'pytz==2018.5'],
     entry_points={
               'console_scripts': [
-                  'weatheregg = weatheregg.__main__:get_weather'
+                  'weatheregg-recorder = weatheregg.__main__:run_weatheregg',
+                  'weatheregg-forecast = weatheregg.__main__:forecast',
+                  'weatheregg = weatheregg.__main__:current_weather'
               ]
     }
 )

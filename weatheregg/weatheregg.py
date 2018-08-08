@@ -1,10 +1,10 @@
 from ast import literal_eval
 from collections import OrderedDict
+from pathlib import PurePath
 from os import path, makedirs
 import typing as T
-import datetime
+import logging
 import csv
-import codecs
 import time
 import datetime
 import re
@@ -14,10 +14,14 @@ import bs4 as bs
 import requests
 
 
-FILE_NAME = '{location}_weather.csv'
-FILE_PATTERN = "{0:%d-%m-%Y_%H}.csv"
-DATA_DIR_NAME = 'data'
+FILE_NAME = 'current_weather.csv'
+FILE_PATTERN = "{0:%Y_%m_%d_%H_%M}.csv"
+DATA_DIR_NAME = 'weather_back_log'
 
+TIMESTAMP_FORMAT = '%Y-%m-%d %H:%M'
+TIMESTAMP_PATTERN = '{{0:{}}}'.format(TIMESTAMP_FORMAT)
+
+# wetter.at url pattern:
 WETTER_AT = 'http://www.wetter.at/wetter/'
 WETTER_AT += '{country}/{state}/{location}/prognose/48-stunden'
 
@@ -28,112 +32,9 @@ class LocationError(Exception):
     """
 
 
-# def wetter_online_request(location: str) -> requests.Response:
-#     """
-#     Makes a request for a specific location
-#
-#     :param location:
-#     :return:
-#     """
-#
-#     if len(location) == 0:
-#         raise TypeError
-#
-#     if isinstance(location, (tuple, dict, set, list, int, float, bool)):
-#         raise TypeError
-#
-#     url = 'https://www.wetteronline.at/{}'.format(location.lower())
-#     print('[INFO] Make request `{}`'.format(url))
-#
-#     request = requests.get(url)
-#
-#     if request.status_code == 404:
-#         raise LocationError
-#     if request.status_code != 200:
-#         raise requests.exceptions.HTTPError
-#     else:
-#         return request
-
-#
-# def parse_response(response: requests.Response) -> list:
-#     """
-#     returns a list of selected data:
-#     [date, timeframe, temperature, precipitation_probability, wind_velocity]
-#
-#     :param response:
-#     :return:
-#     """
-#     if response is None:
-#         raise ValueError('Response can not be None')
-#
-#     try:
-#         soup = bs.BeautifulSoup(response.content, 'html.parser')
-#     except AttributeError:
-#         raise TypeError('Response is of type ``'.format(type(response)))
-#
-#     hourly = soup.find(id='hourly')
-#
-#     if hourly is None:
-#         raise LocationError
-#
-#     weather_data = [
-#         li['data-tt-args'] for li in hourly.find_all(name='li')
-#     ]
-#     weather_data = [eval(d) for d in weather_data]
-#
-#     temp_data = [span.text for span in hourly.find_all(
-#         name='span',
-#         attrs={'class': 'temp'}
-#     )]
-#     assert len(temp_data) == len(weather_data)
-#
-#     weather33h = []
-#     for d, t in zip(weather_data, temp_data):
-#
-#         weather = [
-#             d[0].split(','),
-#             d[2],
-#             d[4],
-#             d[7]
-#         ]
-#         # parse the date
-#         ti = weather[0][1]
-#         date = weather[0][0]
-#         ti = ti.strip().split(':')
-#         print(d[0])
-#         weather[0] = ti[0].strip() + '-' + ti[1].strip()
-#
-#         today = datetime.date.today()
-#         if date == 'heute':
-#             date = today
-#         elif date == 'morgen':
-#             date = today + datetime.timedelta(days=1)
-#
-#         # add übermorgen
-#
-#         # parse the values
-#         w = weather[2]
-#         weather[2] = int(w) if w else 0
-#         v = weather[3]
-#         weather[3] = int(v) if v else 0
-#
-#         # add the temperature
-#         temp = int(t.strip()[:-1])
-#         weather.insert(2, temp)
-#
-#         # add the date
-#         weather.insert(0, date)
-#
-#         weather33h.append(weather)
-#
-#     return weather33h
-
-
-def get_response_for_location(
-        country: str,
-        state: str,
-        location: str
-) -> requests.Response:
+def get_response_for_location(country: str,
+                              state: str,
+                              location: str) -> requests.Response:
     """
     This class makes a request to wetter.at to get the current weather
     data for the provided location.
@@ -168,26 +69,12 @@ def get_response_for_location(
         )
         raise requests.HTTPError(msg)
 
-    # # The website does not return a 404 if the location does not exist
-    # # It returns its main page instead. The body id though contains the
-    # # location if it was found.
-    # # It is quite unique. Therefore we check if the id appears in the
-    # # response text.
-    # body_id = '{country}_{state}'
-    # body_id = body_id.format(country=country, state=state)
-    #
-    # if body_id not in response.text:
-    #     msg = '{} was not found'.format(url)
-    #     raise LocationError(msg)
-
     else:
         return response
 
 
-def parse_chart(
-        weather_soup: bs.BeautifulSoup,
-        chart_name: str
-) -> list:
+def parse_chart(weather_soup: bs.BeautifulSoup,
+                chart_name: str) -> tuple:
     """
     This function takes the soup, searches for the chart and returns
     a list of chart values.
@@ -245,13 +132,11 @@ def parse_chart(
     msg = msg.format(str(len(cleaned_data)))
     assert len(cleaned_data) == 48, msg
 
-    return list(cleaned_data.values())
+    return tuple(cleaned_data.values())
 
 
-def create_datetime_list(
-        data: T.Tuple[list, list, list, list],
-        tz=pytz.timezone('Europe/Vienna')
-) -> T.List:
+def create_datetime_list(data: T.Tuple[tuple, tuple, tuple, tuple],
+                         tz: T.Union[datetime.tzinfo, None] = None) -> tuple:
     """
     Takes a tuple of lists and adds a list with date and one with the hour.
     :param data:
@@ -265,17 +150,17 @@ def create_datetime_list(
     time_list = []
     for hour, *data in enumerate(zip(*data)):
         t = current_time + datetime.timedelta(hours=hour)
-        time_list.append(str(t))
+        timestamp = TIMESTAMP_PATTERN.format(t)
+        time_list.append(timestamp)
 
-    return time_list
+    return tuple(time_list)
 
 
-def get_weather_for_location(
-        country: str,
-        state: str,
-        location: str,
-        tz: datetime.tzinfo=pytz.timezone('Europe/Vienna')
-) -> T.Tuple[list, list, list, list, list]:
+def get_weather_for_location(country: str,
+                             state: str,
+                             location: str,
+                             tz: T.Union[datetime.tzinfo, None] = None) -> \
+        T.Tuple[tuple, tuple, tuple, tuple, tuple]:
     """
     Returns a tuple containing the following data:
 
@@ -308,10 +193,8 @@ def get_weather_for_location(
     return datetime_list, temp_data, cloudcov_data, rain_data, wind_data
 
 
-def save_data_to_csv(
-        data: T.Tuple[list, list, list, list, list],
-        file_path: str
-) -> None:
+def save_data_to_csv(data: T.Tuple[tuple, tuple, tuple, tuple, tuple],
+                     file_path: T.Union[str, PurePath]) -> None:
     """
     Function to write data to a csv file
 
@@ -319,20 +202,16 @@ def save_data_to_csv(
     :param file_path:
     :return:
     """
-    file_path = path.abspath(file_path)
 
-    # if not overwrite:
-    #     assert not path.exists(file_path), '[INFO] File already exists'
-
-    # if not path.exists(path.dirname(file_path)):
-    #     makedirs(path.dirname(file_path))
+    file_path = str(file_path)
+    file_path = str(path.abspath(file_path))
 
     with open(file_path, 'w') as f:
         csv_writer = csv.writer(f, delimiter=',')
 
         # write header
         csv_writer.writerow([
-            'datetime',
+            '',
             'temperature',
             'cloudiness',
             'precipitation',
@@ -340,131 +219,282 @@ def save_data_to_csv(
         ])
 
         # write data
-        for d in data:
+        for d in zip(*data):
             csv_writer.writerow(d)
 
 
-# def save_data_to_csv(data: list,
-#                      fpath: str,
-#                      overwrite: bool = False) -> None:
-#     """
-#     Function to write data to a csv file
-#
-#     :param data:
-#     :param fpath:
-#     :param overwrite:
-#     :return:
-#     """
-#     fpath = path.abspath(fpath)
-#
-#     if not overwrite:
-#         assert not path.exists(fpath), '[INFO] File already exists'
-#
-#     if not path.exists(path.dirname(fpath)):
-#         makedirs(path.dirname(fpath))
-#
-#     with codecs.open(fpath, 'w', 'utf-8-sig') as f:
-#         csv_writer = csv.writer(f, delimiter=',')
-#
-#         # write header
-#         csv_writer.writerow([
-#             'date',
-#             'time',
-#             'weather',
-#             'temperature',
-#             'precipitation_probability',
-#             'wind_velocity'
-#         ])
-#
-#         # write data
-#         for d in data:
-#             csv_writer.writerow(d)
+def save(data: T.Tuple[tuple, tuple, tuple, tuple, tuple],
+         dir_path: T.Union[str, PurePath],
+         tz: T.Union[datetime.tzinfo, None] = None) -> None:
+    """
+    Function to save the data. First to the current
+    file and then to the data directory.
+
+    :param data:
+    :param dir_path:
+    :param tz:
+    :return:
+    """
+
+    dir_path = str(dir_path)
+    dir_path = str(path.abspath(dir_path))
+
+    back_log_dir = str(path.join(dir_path, 'weather_back_log'))
+
+    makedirs(dir_path, exist_ok=True)
+    makedirs(back_log_dir, exist_ok=True)
+
+    # save the current data
+    file_path = path.join(dir_path, FILE_NAME)
+    save_data_to_csv(data=data, file_path=file_path)
+
+    dd = datetime.datetime.now(tz=tz)
+    dd = dd.replace(minute=0, second=0, microsecond=0)
+
+    back_log_file_name = FILE_PATTERN.format(dd)
+    back_log_file_path = path.join(back_log_dir, back_log_file_name)
+
+    # if path.isfile(back_log_file_path):
+    #     msg = '{} does already exist! cannot overwrite backlog file!'
+    #     raise FileExistsError(msg.format(str(back_log_file_path)))
+
+    save_data_to_csv(data=data, file_path=back_log_file_path)
 
 
-# def save(data: list, dir_path: str, location: str) -> None:
-#     """
-#     Function to save the data. First to the current
-#     file and then to the data directory.
-#
-#     :param data:
-#     :param dir_path:
-#     :param location
-#     :return:
-#     """
-#     dir_path = path.abspath(dir_path)
-#
-#     assert not path.isfile(dir_path), \
-#         '[INFO] Please provide the path to a directory and not a file'
-#
-#     if not path.isdir(dir_path):
-#         print('[INFO] {} does not exist. Creating directory'.format(dir_path))
-#         makedirs(dir_path)
-#
-#     # save the current data
-#     fname = FILE_NAME.format(location=location)
-#     fpath = path.join(dir_path, fname)
-#     save_data_to_csv(data=data, file_path=fpath, overwrite=True)
-#
-#     # save the data in the data_dir
-#     data_dir = path.join(dir_path, DATA_DIR_NAME)
-#
-#     dd = datetime.datetime.now()
-#     fname = location + '_' + FILE_PATTERN.format(dd)
-#
-#     fpath = path.join(data_dir, fname)
-#     save_data_to_csv(data=data, file_path=fpath)
+def _clean_location(location: str):
+    location = location.lower().strip()
+    location = location.replace('ä', 'ae')
+    location = location.replace('ö', 'oe')
+    location = location.replace('ü', 'ue')
+    location = location.replace('ß', 'ss')
+    location = location.replace(' ', '-')
 
-#
-# def main_loop(location: str,
-#               time_frame: T.Union[int, float],
-#               dir_path: str,
-#               single_run: bool=False) -> None:
-#     """
-#     Main loop of weatheregg
-#
-#     :param location:
-#     :param time_frame: in minutes
-#     :param dir_path: where you want to store the data
-#     :param single_run:
-#     :return:
-#     """
-#     time_frame = int(time_frame)
-#     time_frame *= 60
-#
-#     while True:
-#         try:
-#             response = wetter_online_request(location=location)
-#
-#         except (requests.exceptions.RequestException,
-#                 requests.exceptions.HTTPError):
-#             print('[WARNING] Request failed. No data output')
-#             if single_run:
-#                 msg = 'not able to reach the website'
-#                 raise requests.exceptions.RequestException(msg)
-#             time.sleep(time_frame)
-#
-#         except LocationError:
-#             print('[WARNING] Location not found. No data output')
-#             if single_run:
-#                 msg = 'Location not found'
-#                 raise LocationError(msg)
-#
-#             time.sleep(time_frame)
-#
-#         else:
-#             print('[INFO] Parse response')
-#             data = parse_response(response=response)
-#             print('[INFO]: Save Data')
-#             save(data, dir_path=dir_path, location=location)
-#
-#             if single_run:
-#                 return
-#             time.sleep(time_frame)
+    return location
 
-#
-# if __name__ == '__main__':
-#     TEST_DIR = path.abspath(path.dirname(__file__))
-#     ROOT_DIR = path.abspath(path.join(TEST_DIR, '..'))
-#     DATA_DIR = path.abspath(path.join(ROOT_DIR, 'data'))
-#
-#     main_loop('wien', '60', DATA_DIR, single_run=True)
+
+class WeatherEgg:
+    """
+    Main Class of the program.
+    Its run_forever method starts a loop which collects data and saves it to
+    the current_weather file and to the weather_back_log directory. You need
+    to provide a data directory path for it to work though.
+
+    Usage::
+        >>> weatheregg = WeatherEgg(
+        ...     'oesterreich',
+        ...     'niederoesterreich',
+        ...     'moedling',
+        ...     data_dir='/home/user/data/'
+        ... )
+
+        >>> weatheregg.weather_forecast()  # doctest: +ELLIPSIS
+        {'timestamp': ...}
+
+        >>> weatheregg.current_temperature()  # doctest: +SKIP
+        >>> weatheregg.current_cloudiness()  # doctest: +SKIP
+        >>> weatheregg.current_precipitation()  # doctest: +SKIP
+        >>> weatheregg.current_wind_velocity()  # doctest: +SKIP
+        >>> weatheregg.run_forever()  # doctest: +SKIP
+
+    """
+
+    RETRY_INTERVAL = 10  # seconds
+
+    LINE_FORMAT = '{datetime:<16}, {temp:>18}, {cloudiness:>15}, ' \
+                  '{precipitation:>18}, {wind:>20}'
+
+    def __init__(self,
+                 country: str,
+                 state: str,
+                 location: str,
+                 data_dir: T.Union[str, PurePath, None]=None,
+                 tz: T.Union[datetime.tzinfo, None, str]=None,
+                 interval: int = 60):
+        interval = int(interval)
+        if interval < 60:
+            msg = 'Interval must be bigger than 60 minutes!'
+            raise ValueError(msg)
+
+        if data_dir is not None:
+            self._data_dir = str(data_dir)
+            self._data_dir = str(path.abspath(data_dir))
+        else:
+            self._data_dir = None
+
+        if isinstance(tz, str):
+            tz = pytz.timezone(tz)
+
+        self._country = _clean_location(country)
+        self._state = _clean_location(state)
+        self._location = _clean_location(location)
+        self._tz = tz
+        self._interval = interval
+
+        # check if the location exists:
+        get_weather_for_location(
+            self._country,
+            self._state,
+            self._location,
+            tz=self._tz
+        )
+
+    @property
+    def url(self) -> str:
+        """
+        Returns the url which is used for requesting the weather.
+
+        :return:
+        """
+        return WETTER_AT.format(
+            country=self._country,
+            state=self._state,
+            location=self._location
+        )
+
+    def _get_data(self) -> T.Tuple[tuple, tuple, tuple, tuple, tuple]:
+        data = get_weather_for_location(
+            self._country,
+            self._state,
+            self._location,
+            tz=self._tz
+        )
+
+        return data
+
+    def weather_forecast(self) -> dict:
+        """
+        Returns the 48 hours weather forecast.
+
+        :return:
+        """
+        data = self._get_data()
+        forecast = {
+            'timestamp'    : data[0],
+            'temperature'  : data[1],
+            'cloudiness'   : data[2],
+            'precipitation': data[3],
+            'wind_velocity': data[4]
+        }
+        timestamps = [datetime.datetime.strptime(dd, TIMESTAMP_FORMAT) for
+                      dd in forecast['timestamp']]
+        if self._tz is not None:
+            for dd in timestamps:
+                dd.replace(tzinfo=self._tz)
+        forecast['timestamp'] = tuple(timestamps)
+        return forecast
+
+    def current_weather(self) -> T.Tuple[int, int, float, int]:
+        """
+        Returns a tuple with the current weather data.
+        :return:
+        """
+        data = self.weather_forecast()
+        t = data['temperature'][0]
+        c = data['cloudiness'][0]
+        p = data['precipitation'][0]
+        w = data['wind_velocity'][0]
+        return t, c, p, w
+
+    def current_temperature(self) -> int:
+        """
+        Returns the current temperature based on the 48 hours forecast.
+        :return:
+        """
+        t = self.weather_forecast()['temperature']
+        return t[0]
+
+    def current_cloudiness(self) -> int:
+        """
+        Returns the current cloudiness based on the 48 hours forecast.
+        :return:
+        """
+        c = self.weather_forecast()['cloudiness']
+        return c[0]
+
+    def current_precipitation(self) -> float:
+        """
+        Returns the current precipitation based on the 48 hours forecast.
+        :return:
+        """
+        p = self.weather_forecast()['precipitation']
+        return float(p[0])
+
+    def current_wind_velocity(self) -> int:
+        """
+        Returns the current wind velocity based on the 48 hours forecast.
+        :return:
+        """
+        w = self.weather_forecast()['wind_velocity']
+        return w[0]
+
+    def print_weather(self) -> None:
+        """
+        Outputs the weather forecast in a pretty format.
+        :return:
+        """
+        data = self._get_data()
+        print(self.LINE_FORMAT.format(
+            datetime='',
+            temp='temperature [°C]',
+            cloudiness='cloudiness [%]',
+            precipitation='precipitation [mm]',
+            wind='wind velocity [km/h]'
+        ))
+
+        for d in zip(*data):
+            print(self.LINE_FORMAT.format(
+                datetime=d[0],
+                temp=str(d[1]),
+                cloudiness=str(d[2]),
+                precipitation=str(float(d[3])),
+                wind=str(d[4])
+            ))
+
+    def run_forever(self) -> None:
+        """
+        This method runs the weatheregg.
+
+        :return:
+        """
+
+        if self._data_dir is None:
+            msg = 'Please provide a data directory for Weatheregg.'
+            raise ValueError(msg)
+
+        makedirs(self._data_dir, exist_ok=True)
+
+        logging_file_path = str(path.join(self._data_dir, 'weatheregg.log'))
+
+        logger = logging.getLogger('weatheregg_logger')
+        logger.setLevel(logging.DEBUG)
+        fh = logging.FileHandler(logging_file_path)
+        fh.setLevel(logging.INFO)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter(
+            '[%(levelname)s] - %(asctime)s - %(message)s')
+        fh.setFormatter(formatter)
+        ch.setFormatter(formatter)
+        # add the handlers to the logger
+        logger.addHandler(fh)
+        logger.addHandler(ch)
+
+        retry = False
+
+        while True:
+            try:
+                logger.info('Load data from {}.'.format(self.url))
+                data = self._get_data()
+            except Exception as e:
+                logger.exception(e)
+                retry = True
+            else:
+                logger.info('Save data.')
+                save(data, dir_path=self._data_dir)
+
+            if retry:
+                time.sleep(self.RETRY_INTERVAL)
+                retry = False
+            else:
+                time.sleep(self._interval * 60)

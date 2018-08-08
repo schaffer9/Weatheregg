@@ -3,14 +3,11 @@ import sys
 
 import pytz
 
-from weatheregg import get_weather_for_location
+from weatheregg import WeatherEgg
+from weatheregg.version import __version__ as version
 
 
-LINE_FORMAT = '{datetime:>25}, {temp:>18}, {cloudiness:>15}, ' \
-              '{precipitation:>18}, {wind:>20}'
-
-
-def get_weather(args=None) -> None:
+def forecast(args=None) -> None:
     """
     Retrieves 48 hours weather data from wetter.at for the given location.
 
@@ -29,83 +26,109 @@ def get_weather(args=None) -> None:
     parser.add_argument('state')
     parser.add_argument('location')
 
-    parser.add_argument('-t', '--timezone', default='Europe/Vienna')
+    parser.add_argument('-t', '--timezone',
+                        help='E. g. Europe/Vienna. You need to specify the '
+                             'timezone if the location does not have your '
+                             'local timezone'
+                        )
 
     args = parser.parse_args(args)
 
-    tz = pytz.timezone(args.timezone)
+    if args.timezone is not None:
+        tz = pytz.timezone(args.timezone)
+    else:
+        tz = None
 
-    weather = get_weather_for_location(
+    weatheregg = WeatherEgg(
         country=args.country,
         state=args.state,
         location=args.location,
         tz=tz
     )
-    print(LINE_FORMAT.format(
-        datetime='',
-        temp='temperature [°C]',
-        cloudiness='cloudiness [%]',
-        precipitation='precipitation [mm]',
-        wind='wind velocity [km/h]'
-    ))
 
-    for d in zip(*weather):
-        print(LINE_FORMAT.format(
-            datetime=d[0],
-            temp=str(d[1]),
-            cloudiness=str(d[2]),
-            precipitation=str(d[3]),
-            wind=str(d[4])
-        ))
+    weatheregg.print_weather()
 
-# from weatheregg import main_loop
-#
-#
-# def main(args=None):
-#     """The main routine."""
-#
-#     if args is None:
-#         args = sys.argv[1:]
-#
-#     parser = argparse.ArgumentParser(
-#         description='WeatherEgg-0.0.1',
-#         prog='weatheregg'
-#     )
-#
-#     parser.add_argument(
-#         'location',
-#         help='Which place?'
-#     )
-#
-#     parser.add_argument(
-#         'directory',
-#         help='Where do you want to store your data?'
-#     )
-#
-#     parser.add_argument(
-#         '-i', '--interval',
-#         type=int,
-#         default=60,
-#         help='In which intervals do you want to collect data?'
-#              ' Must be given in minutes'
-#     )
-#
-#     parser.add_argument(
-#         '-s', '--single-run',
-#         action='store_true',
-#         help='Do you want to just load the data once?'
-#     )
-#
-#     args = parser.parse_args(args)
-#
-#     print(args)
-#
-#     assert args.interval >= 60, 'Interval must be greater than 60 minutes'
-#     main_loop(location=args.location,
-#               dir_path=args.directory,
-#               time_frame=args.interval,
-#               single_run=args.single_run)
-#
-#
-# if __name__ == '__main__':
-#     main()
+
+def current_weather(args=None) -> None:
+    """
+    Prints the current temperature for the specified location.
+    :param args:
+    :return:
+    """
+
+    if args is None:
+        args = sys.argv[1:]
+
+    parser = argparse.ArgumentParser(
+        description='WeatherEgg-1.2.0',
+        prog='weatheregg'
+    )
+
+    parser.add_argument('country')
+    parser.add_argument('state')
+    parser.add_argument('location')
+
+    args = parser.parse_args(args)
+
+    weatheregg = WeatherEgg(
+        country=args.country,
+        state=args.state,
+        location=args.location,
+    )
+
+    weather = weatheregg.current_weather()
+
+    f = '{0:<15}: {1}'
+
+    print(f.format('temperature', weather[0]))
+    print(f.format('cloudiness', weather[1]))
+    print(f.format('precipitation', weather[2]))
+    print(f.format('wind_velocity', weather[3]))
+
+
+def run_weatheregg(args=None):
+    """
+    This function start the weather record for the specified location.
+    """
+
+    if args is None:
+        args = sys.argv[1:]
+
+    parser = argparse.ArgumentParser(
+        description='WeatherEgg-{}'.format(version),
+        prog='weatheregg'
+    )
+
+    parser.add_argument('country')
+    parser.add_argument('state')
+    parser.add_argument('location')
+
+    parser.add_argument(
+        'directory',
+        help='Where do you want to store your data?'
+    )
+
+    parser.add_argument(
+        '-i', '--interval',
+        type=int,
+        default=60,
+        help='In which intervals do you want to collect data?'
+             ' Must be given in minutes'
+    )
+
+    parser.add_argument('-t', '--timezone',
+                        help='E. g. Europe/Vienna. You need to specify the '
+                             'timezone if the location does not have your '
+                             'local timezone')
+
+    args = parser.parse_args(args)
+
+    weatheregg = WeatherEgg(
+        country=args.country,
+        state=args.state,
+        location=args.location,
+        tz=args.timezone,
+        data_dir=args.directory
+    )
+
+    weatheregg.run_forever()
