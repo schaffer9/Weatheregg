@@ -7,6 +7,11 @@ from weatheregg import WeatherEgg
 from weatheregg.version import __version__ as version
 
 
+HELP_MSG = "Country, state and location correspond to the information in " \
+           "the wetter.at url. E. g.: " \
+           "http://www.wetter.at/wetter/oesterreich/" \
+           "niederoesterreich/zwettl/prognose/48-stunden."
+
 def forecast(args=None) -> None:
     """
     Retrieves 48 hours weather data from wetter.at for the given location.
@@ -18,18 +23,25 @@ def forecast(args=None) -> None:
         args = sys.argv[1:]
 
     parser = argparse.ArgumentParser(
-        description='WeatherEgg-1.2.0',
+        description='WeatherEgg-{}'.format(version),
         prog='weatheregg'
     )
 
     parser.add_argument('country')
     parser.add_argument('state')
-    parser.add_argument('location')
+    parser.add_argument('location', help=HELP_MSG)
 
     parser.add_argument('-t', '--timezone',
                         help='E. g. Europe/Vienna. You need to specify the '
                              'timezone if the location does not have your '
                              'local timezone'
+                        )
+
+    parser.add_argument('-p', '--pretty-format',
+                        default=False,
+                        action='store_true',
+                        help='outputs the Forecast in a pretty format '
+                             'instead of plain csv.'
                         )
 
     args = parser.parse_args(args)
@@ -46,7 +58,7 @@ def forecast(args=None) -> None:
         tz=tz
     )
 
-    weatheregg.print_weather()
+    weatheregg.print_weather(pretty_print=args.pretty_format)
 
 
 def current_weather(args=None) -> None:
@@ -60,13 +72,13 @@ def current_weather(args=None) -> None:
         args = sys.argv[1:]
 
     parser = argparse.ArgumentParser(
-        description='WeatherEgg-1.2.0',
+        description='WeatherEgg-{}'.format(version),
         prog='weatheregg'
     )
 
     parser.add_argument('country')
     parser.add_argument('state')
-    parser.add_argument('location')
+    parser.add_argument('location', help=HELP_MSG)
 
     args = parser.parse_args(args)
 
@@ -101,19 +113,21 @@ def run_weatheregg(args=None):
 
     parser.add_argument('country')
     parser.add_argument('state')
-    parser.add_argument('location')
+    parser.add_argument('location', help=HELP_MSG)
 
     parser.add_argument(
         'directory',
-        help='Where do you want to store your data?'
+        help='Where do you want to store the data? Be careful to not store '
+             'data from two weathereggs into the same directory, since they '
+             'will overwrite each other.'
     )
 
     parser.add_argument(
         '-i', '--interval',
         type=int,
         default=60,
-        help='In which intervals do you want to collect data?'
-             ' Must be given in minutes'
+        help='In which intervals do you want to update the data?'
+             ' It must be bigger than 60 minutes.'
     )
 
     parser.add_argument('-t', '--timezone',

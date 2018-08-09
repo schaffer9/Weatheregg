@@ -427,13 +427,20 @@ class WeatherEgg:
         w = self.weather_forecast()['wind_velocity']
         return w[0]
 
-    def print_weather(self) -> None:
+    def print_weather(self, pretty_print=True) -> None:
         """
         Outputs the weather forecast in a pretty format.
         :return:
         """
+
+        if pretty_print:
+            print_format = self.LINE_FORMAT
+        else:
+            print_format = '{datetime},{temp},{cloudiness},' \
+                           '{precipitation},{wind}'
+
         data = self._get_data()
-        print(self.LINE_FORMAT.format(
+        print(print_format.format(
             datetime='',
             temp='temperature [°C]',
             cloudiness='cloudiness [%]',
@@ -442,7 +449,7 @@ class WeatherEgg:
         ))
 
         for d in zip(*data):
-            print(self.LINE_FORMAT.format(
+            print(print_format.format(
                 datetime=d[0],
                 temp=str(d[1]),
                 cloudiness=str(d[2]),
@@ -486,15 +493,23 @@ class WeatherEgg:
             try:
                 logger.info('Load data from {}.'.format(self.url))
                 data = self._get_data()
-            except Exception as e:
-                logger.exception(e)
+            except Exception as error:
+                logger.exception(error)
                 retry = True
             else:
-                logger.info('Save data.')
-                save(data, dir_path=self._data_dir)
+                logger.info('Save weather data to {}.'.format(self._data_dir))
+                try:
+                    save(data, dir_path=self._data_dir)
+                except Exception as error:
+                    logger.exception(error)
+                    retry = True
 
             if retry:
+                logger.info('Last request failed. Retry in {} '
+                            'seconds'.format(self.RETRY_INTERVAL))
                 time.sleep(self.RETRY_INTERVAL)
                 retry = False
             else:
+                logger.info('Success. Next update in {} minutes.'.format(
+                    self._interval))
                 time.sleep(self._interval * 60)

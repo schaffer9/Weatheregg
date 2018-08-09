@@ -1,25 +1,34 @@
 import os
 from setuptools import setup
 
-from weatheregg.version import __version__
+
+version = {}
+
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+VERSION_FILE = os.path.join(ROOT_DIR, 'weatheregg', 'version.py')
+
+with open(VERSION_FILE) as fp:
+    exec(fp.read(), version)
 
 
-def read(fname):
+def read(file_name):
     """
     Utility function to read the README file.
-    Used for the long_description.  It's nice, because now 1) we have a top level
+    Used for the long_description.  It's nice, because now 1) we have a top
+    level
     README file and 2) it's easier to type in the README file than to put a raw
     string in below ...
 
-    :param fname:
+    :param file_name:
     :return:
     """
 
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    return open(os.path.join(os.path.dirname(__file__), file_name)).read()
+
 
 setup(
     name="Weatheregg",
-    version=__version__,
+    version=version['__version__'],
     author="Sebastian Schaffer",
     author_email="schaffer.sebastian@gmx.at",
     description="Small program to download some weather data",

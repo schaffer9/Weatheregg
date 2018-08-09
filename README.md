@@ -1,42 +1,86 @@
 # Weatheregg
-A simple program to collect weather data
+Weatheregg is a simple and useful tool for collecting and saving weather 
+data. It uses *wetter.at* and can give a 48 hours forecast for any location 
+supported by *wetter.at*.
 
 ## Installation:
 
 1. Download and install Python3.6  
 
-    Make sure that you have added it to your environment variables and that you can run it
+2. Download or clone the Weatheregg repository. 
 
 2. Go into the Weatheregg directory and run 
 
-    **python setup.py install** or  
-    **python36 setup.py install**
+    `$ python36 setup.py install`
 
-3. Now you should be able to run the Weatheregg program.
+3. Run tests to verify your installation:
 
-    Type **python weatheregg -h**
+    `$ pytest`
 
-## usage:
-`weatheregg [-h] [-i INTERVAL] [-s] location directory`
+## Usage:
+Weatheregg provides three features:
 
-|**positional arguments**: | |
-| --- | --- |
-| location      | Which place? |
-| directory     | Where do you want to store your data? |
+1. It can give you the current weather data for the specified location:
+   
+   `$ weatheregg --help`
+    
+   E. g.: `$ weatheregg Österreich Niederösterreich Mödling` 
+   
+   **Arguments**: 
+   
+   
+   * Country
+   * State 
+   * Location
+   
+     Country, state and location correspond to the information in the wetter.at 
+     url. E. g.: 
+     http://www.wetter.at/wetter/oesterreich/niederoesterreich/zwettl/prognose/48-stunden.
+   
 
-
-| **optional arguments**:  | |
-| --- | --- |
-| -h, --help                       | show this help message and exit? |
-| -i, --interval INTERVAL | For repeatedly collecting data in **minutes**. Min.= 60, Default=60 |
-| -s, --single-run                 | Do you want to just load the data once? |
-
-Wheatheregg can be run in a loop to collect and update data in a given interval or it is possible to run it just once. If you just want to run it once add -s to the command. By default it will run in a loop with an interval of 60 minutes.
-
-## Examples:
-
-`python -m weatheregg wien data -i 60`
-
-`python -m weatheregg Purkersdorf /home/user/data -s`
-
-`python -m weatheregg Purkersdorf C:\Users\user\workspace\data -i 60`
+2. It can give you a 48 hours forecast for a specified location:
+   
+   `$ weatheregg-forecast --help`
+   
+   E. g.: `$ weatheregg-forecast Österreich Niederösterreich Mödling`
+   
+   **Arguments**: 
+   
+   * Country
+   * State 
+   * Location
+   
+   **Optional arguments**:
+   
+   * -t, --timezone:
+     If the location lies outside your timezone, you can specify it.
+   
+   * -p, --pretty-format: outputs the forecast with line alignment.
+   
+  
+3. It can continuously record the 48 hours forecast to csv files. Therefore 
+   you also need to specify a data directory. In this directory you will 
+   find the logging file, the *current_weather.csv* file and the backlog 
+   directory, where all data is saved. The update interval must be bigger 
+   than 60 minutes.
+   
+   `$ weatheregg-recorder --help`
+   
+   E. g.: 
+   `$ weatheregg-recorder Österreich Niederösterreich Mödling 
+   /home/user/weatehr_moedling/`
+   
+   **Arguments**: 
+   
+   * Country
+   * State 
+   * Location
+   * directory
+   
+   **Optional arguments**:
+   
+   * -t, --timezone:
+     If the location lies outside your timezone, you can specify it.
+     
+   * -i, --interval:
+     The interval within the data is updated. The default is 60 minutes.
