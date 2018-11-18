@@ -1,3 +1,5 @@
+
+import sys
 from ast import literal_eval
 from collections import OrderedDict
 from pathlib import PurePath
@@ -26,10 +28,18 @@ WETTER_AT = 'http://www.wetter.at/wetter/'
 WETTER_AT += '{country}/{state}/{location}/prognose/48-stunden'
 
 
-class LocationError(Exception):
+class WeathereggException(Exception):
+    pass
+
+
+class LocationError(WeathereggException):
     """
     Invalid location
     """
+
+
+class ParseError(WeathereggException):
+    pass
 
 
 def get_response_for_location(country: str,
@@ -112,9 +122,16 @@ def parse_chart(weather_soup: bs.BeautifulSoup,
     data_line = data_lines[0]
 
     # we match greedy.
-    data_pattern = re.compile(r'\[\[[\d\s\[\],.]*\]\]')
+    data_pattern = re.compile(r'\[\[[\d\s\[\],.\-]*\]\]')
 
-    data = data_pattern.search(data_line).group()
+    data = data_pattern.search(data_line)
+
+    if data is None:
+        msg = 'The regular expression did not match the data for some ' \
+              'reason. Please check the regex.'
+        raise ParseError(msg)
+
+    data = data.group()
     # use literal_eval to convert the string to a list.
     # string has form of '[[0, 10], [1, 12], ..., [47, 9]]'
     data = literal_eval(data)
@@ -298,7 +315,7 @@ class WeatherEgg:
 
     """
 
-    RETRY_INTERVAL = 10  # seconds
+    RETRY_INTERVAL = 120  # seconds
 
     LINE_FORMAT = '{datetime:<16}, {temp:>18}, {cloudiness:>15}, ' \
                   '{precipitation:>18}, {wind:>20}'
@@ -493,16 +510,22 @@ class WeatherEgg:
             try:
                 logger.info('Load data from {}.'.format(self.url))
                 data = self._get_data()
+
+            except WeathereggException as fatal_error:
+                logger.exception(fatal_error)
+                sys.exit(status=1)
+
             except Exception as error:
                 logger.exception(error)
                 retry = True
+
             else:
                 logger.info('Save weather data to {}.'.format(self._data_dir))
                 try:
                     save(data, dir_path=self._data_dir)
                 except Exception as error:
                     logger.exception(error)
-                    retry = True
+                    sys.exit(status=1)
 
             if retry:
                 logger.info('Last request failed. Retry in {} '

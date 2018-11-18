@@ -12,6 +12,7 @@ HELP_MSG = "Country, state and location correspond to the information in " \
            "http://www.wetter.at/wetter/oesterreich/" \
            "niederoesterreich/zwettl/prognose/48-stunden."
 
+
 def forecast(args=None) -> None:
     """
     Retrieves 48 hours weather data from wetter.at for the given location.
@@ -24,7 +25,7 @@ def forecast(args=None) -> None:
 
     parser = argparse.ArgumentParser(
         description='WeatherEgg-{}'.format(version),
-        prog='weatheregg'
+        prog='weatheregg-forecast'
     )
 
     parser.add_argument('country')
@@ -108,7 +109,7 @@ def run_weatheregg(args=None):
 
     parser = argparse.ArgumentParser(
         description='WeatherEgg-{}'.format(version),
-        prog='weatheregg'
+        prog='weatheregg-recorder'
     )
 
     parser.add_argument('country')
