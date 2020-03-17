@@ -33,12 +33,11 @@ setup(
     author_email="schaffer.sebastian@gmx.at",
     description="Small program to download some weather data",
     license="MIT",
-    packages=['weatheregg', 'tests'],
+    packages=['weatheregg'],
     long_description=read('README.md'),
     install_requires=['requests==2.19.1',
                       'pytest==3.6.3',
                       'lxml==4.2.3',
-                      'beautifulsoup4==4.6.0',
                       'pytz==2018.5'],
     entry_points={
               'console_scripts': [

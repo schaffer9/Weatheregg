@@ -95,7 +95,7 @@ def current_weather(args=None) -> None:
 
     print(f.format('temperature', weather[0]))
     print(f.format('cloudiness', weather[1]))
-    print(f.format('precipitation', weather[2]))
+    print(f.format('rain', weather[2]))
     print(f.format('wind_velocity', weather[3]))
 
 

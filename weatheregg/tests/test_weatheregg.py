@@ -17,7 +17,7 @@ from weatheregg.weatheregg import (
     LocationError,
     get_response_for_location,
     get_weather_for_location,
-    parse_chart,
+    # parse_chart,
     save_data_to_csv,
     save,
     DATA_DIR_NAME,
@@ -76,45 +76,45 @@ class TestGetResponseForLocation(unittest.TestCase):
                               'somewhere')
 
 
-class TestParseChart(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """
-
-        :return:
-        """
-        response = get_response_for_location('oesterreich',
-                                             'niederoesterreich',
-                                             'purkersdorf')
-        cls.weather_soup = bs.BeautifulSoup(response.content, 'lxml')
-
-    def test_000_parse_temp_chart(self):
-        data = parse_chart(self.weather_soup, 'temp')
-        self.assertEqual(len(data), 48)
-
-    def test_001_parse_rain_chart(self):
-        data = parse_chart(self.weather_soup, 'rain')
-        self.assertEqual(len(data), 48)
-
-    def test_002_parse_cloudcov_chart(self):
-        data = parse_chart(self.weather_soup, 'cloudcov')
-        self.assertEqual(len(data), 48)
-
-    def test_003_parse_wind_chart(self):
-        data = parse_chart(self.weather_soup, 'wind')
-        self.assertEqual(len(data), 48)
-
-    def test_004_invalid_name(self):
-        with self.assertRaises(ValueError):
-            parse_chart(self.weather_soup, 'test')
-
-    def test_raise_location_error(self):
-        response = get_response_for_location('oesterreich',
-                                             'niederoesterreich',
-                                             'somewhere')
-        weather_soup = bs.BeautifulSoup(response.content, 'lxml')
-        with self.assertRaises(LocationError):
-            parse_chart(weather_soup, 'rain')
+# class TestParseChart(unittest.TestCase):
+#     @classmethod
+#     def setUpClass(cls):
+#         """
+#
+#         :return:
+#         """
+#         response = get_response_for_location('oesterreich',
+#                                              'niederoesterreich',
+#                                              'purkersdorf')
+#         cls.weather_soup = bs.BeautifulSoup(response.content, 'lxml')
+#
+#     def test_000_parse_temp_chart(self):
+#         data = parse_chart(self.weather_soup, 'temp')
+#         self.assertEqual(len(data), 48)
+#
+#     def test_001_parse_rain_chart(self):
+#         data = parse_chart(self.weather_soup, 'rain')
+#         self.assertEqual(len(data), 48)
+#
+#     def test_002_parse_cloudcov_chart(self):
+#         data = parse_chart(self.weather_soup, 'cloudcov')
+#         self.assertEqual(len(data), 48)
+#
+#     def test_003_parse_wind_chart(self):
+#         data = parse_chart(self.weather_soup, 'wind')
+#         self.assertEqual(len(data), 48)
+#
+#     def test_004_invalid_name(self):
+#         with self.assertRaises(ValueError):
+#             parse_chart(self.weather_soup, 'test')
+#
+#     def test_raise_location_error(self):
+#         response = get_response_for_location('oesterreich',
+#                                              'niederoesterreich',
+#                                              'somewhere')
+#         weather_soup = bs.BeautifulSoup(response.content, 'lxml')
+#         with self.assertRaises(LocationError):
+#             parse_chart(weather_soup, 'rain')
 
 
 def check_file(test_case, file_path):
@@ -137,7 +137,7 @@ def check_file(test_case, file_path):
             '',
             'temperature',
             'cloudiness',
-            'precipitation',
+            'rain',
             'wind_velocity'
         ]
     )
@@ -266,7 +266,7 @@ class TestWeatherEgg(unittest.TestCase):
         self.assertEqual(
             weatheregg.url,
             'http://www.wetter.at/wetter/oesterreich/'
-            'niederoesterreich/purkersdorf/prognose/48-stunden'
+            'niederoesterreich/purkersdorf/prognose/stuendlich'
         )
 
     def test_003_weather_forecast(self):
@@ -280,11 +280,11 @@ class TestWeatherEgg(unittest.TestCase):
         forecast = weatheregg.weather_forecast()
 
         for field in ['timestamp', 'temperature', 'cloudiness',
-                      'precipitation', 'wind_velocity']:
+                      'rain', 'wind_velocity']:
             self.assertEqual(len(forecast[field]), 48)
 
         float(weatheregg.current_cloudiness())
-        float(weatheregg.current_precipitation())
+        float(weatheregg.current_rain())
         float(weatheregg.current_temperature())
         float(weatheregg.current_wind_velocity())
 
